@@ -108,6 +108,7 @@ function findColumnSpace(M)
     close(io)
 end
 
+# Return the ((inner product between v1 an v2) - (v1[index] * v2[index]))  
 function product(v1, v2, index)
     dimens = size(v1)
 
