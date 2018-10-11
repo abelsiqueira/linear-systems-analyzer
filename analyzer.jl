@@ -99,7 +99,7 @@ function findColumnSpace(M)
     pivots = pivotsMarker(M)
     dimens = size(pivots)
 
-    io = open("bases_C(U).txt", "w+")
+    io = open("bases_C-U.txt", "w+")
     for i = 1:dimens[1]
         if pivots[i] == 1
             print(io, M[:, i], " ")
@@ -128,7 +128,7 @@ function findNullspace(M)
     pivots = pivotsMarker(M)
     x = zeros(Float64, n, 1)
 
-    io = open("bases_N(A).txt", "w+")
+    io = open("bases_N-A.txt", "w+")
     if rank == n
         print(io, x, " ")
         close(io)
