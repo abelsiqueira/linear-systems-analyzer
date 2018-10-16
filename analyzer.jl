@@ -1,16 +1,8 @@
 using DelimitedFiles
 
-function findDimensions(M)
-    dimens = size(M)
-    m = dimens[1]
-    n = dimens[2]
-
-    return m, n
-end
-
-function printMatrix(fileName, M)
-    writedlm(fileName, M)
-end
+#function printMatrix(fileName, M)
+#    writedlm(fileName, M)
+#end
 
 function exchangeRows(M, i1, i2)
     aux = M[i1, :]
@@ -20,61 +12,53 @@ function exchangeRows(M, i1, i2)
     return M
 end
 
-function reduceMatrix(M)
-    m, n = findDimensions(M)
+# Return the index of the first non null element finded in or under row i in
+# column j. If there isn't pivot, return -1
+function pivotIndex(M, i, j)
+    m, n = size(M)
 
-    row = 1
-    column = 1
-    while (row <= m) && (column <= n)
-        for cont = (row + 1):m
-            if M[row, column] == 0
-                if M[cont, column] != 0
-                    M = exchangeRows(M, row, cont)
-                end
-                continue
-            end
-            M[cont, :] -= (M[cont, column] / M[row, column]) * M[row, :]
+    for cont = i:m
+        if M[cont, j] != 0
+            return cont
         end
-        if M[row, column] == 0
-            column += 1
-            continue
-        end
-        row += 1
-        column += 1
+        return -1
     end
-
-    return  M
 end
 
-function isPivot(M, row, column)
-    m, n = findDimensions(M)
+function reduceMatix(M)
+    m, n = size(M)
 
-    if M[row, column] == 0
-        return false
-    end
-    for i = (row + 1):m
-        if M[i, column] != 0
-            return false
+    i = j = 1
+    while (i <= m) && (j <= n)
+        row = pivotIndex(M, i, j)
+        if row != -1
+            if row != i
+                exchangeRows(M, row, i)
+            end
+            for cont = (i + 1):m
+                M[cont, :] -= (M[cont, column] / M[row, column]) * M[row, :]
+            end
+            i += 1
+            j += 1
+        else
+            j += 1
         end
     end
-    return true
 end
 
 function pivotsMarker(M)
-    m, n = findDimensions(M)
+    m, n = size(M)
 
-    pivots = zeros(Float64, n, 1)
-    row = 1
-    column = 1
-    first = true
-    while (row <= m) && (column <= n)
-        if isPivot(M, row, column)
-            pivots[column] = 1
-            row += 1
-            column += 1
+    pivots = zeros(n, 1)
+    i = j = 1
+    while (i <= m) && (j <= n)
+        if pivotIndex(M, i, j) != -1
+            pivots[j] = 1
+            i += 1
+            j += 1
             continue
         end
-        column += 1
+        j += 1
     end
 
     return pivots
@@ -97,18 +81,20 @@ end
 
 function findColumnSpace(M)
     pivots = pivotsMarker(M)
-    dimens = size(pivots)
+    rank = findRank(M)
+    m, n = size(M)
 
-    io = open("bases_C-U.txt", "w+")
-    for i = 1:dimens[1]
+    C = zeros(Float64, m, rank)
+    for i = 1:n
         if pivots[i] == 1
-            print(io, M[:, i], " ")
+            C[:, i] = M[:, i]
         end
     end
-    close(io)
+
+    return C
 end
 
-# Return value of ((inner product between v1 an v2) - (v1[index] * v2[index]))  
+# Return value of ((inner product between v1 an v2) - (v1[index] * v2[index]))
 function product(v1, v2, index)
     dimens = size(v1)
 
@@ -123,41 +109,45 @@ function product(v1, v2, index)
 end
 
 function findNullspace(M)
-    M = reduceMatrix(M)
-    m, n = findDimensions(M)
-    rank = findRank(M)
-    pivots = pivotsMarker(M)
-    x = zeros(Float64, n, 1)
+    U = reduceMatrix(M)
+    m, n = size(U)
+    rank = findRank(U)
+    pivots = pivotsMarker(U)
+    N = zeros(n, n - rank)
 
-    io = open("bases_N-A.txt", "w+")
-    if rank == n
-        print(io, x, " ")
-        close(io)
-        return
-    end
+    if rank != n
+        column = 1 # Column where will be put the x vector finded in each iteration
 
-    for i = 1:n
-        if pivots[i] == 0
-            x[i] = 1
+        for i = 1:n
+            if pivots[i] == 0
+                x = zeros(Float64, n, 1)
+                x[i] = 1
 
-            cont = 0
-            j = n
-            while j >= 1
-                if pivots[j] == 1
-                    x[j] = (-1 * product(M[rank - cont, :], x, j)) / M[rank - cont, j]
-                    cont += 1
+                cont = 0
+                j = n
+                while j >= 1
+                    if pivots[j] == 1
+                        x[j] = (-1 * product(U[rank - cont, :], x, j)) / U[rank - cont, j]
+                        cont += 1
+                    end
+
+                    j -= 1
                 end
-
-                j -= 1
+                N[:, column] = x
+                column += 1
             end
-            print(io, x, " ")
         end
     end
-    close(io)
+
+    return N
 end
 
+cd("/home/leonardo/githubProjects/linear-systems-analyzer")
 A = readdlm("matrix_A.txt", ' ', Float64)
-findNullspace(A)
 U = reduceMatrix(A)
+C = findColumnSpace(A)
+N = findNullspace(A)
+#writedlm("matrix_U.txt", U, " ")
 writedlm("matrix_U.txt", U, " ")
-findColumnSpace(U)
+writedlm("matrix_C.txt", C, " ")
+writedlm("matrix_N.txt", N, " ")
