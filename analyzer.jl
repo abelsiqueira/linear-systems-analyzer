@@ -25,7 +25,7 @@ function pivotIndex(M, i, j)
     end
 end
 
-function reduceMatix(M)
+function reduceMatrix(M)
     m, n = size(M)
 
     i = j = 1
@@ -36,7 +36,7 @@ function reduceMatix(M)
                 exchangeRows(M, row, i)
             end
             for cont = (i + 1):m
-                M[cont, :] -= (M[cont, column] / M[row, column]) * M[row, :]
+                M[cont, :] -= (M[cont, j] / M[row, j]) * M[row, :]
             end
             i += 1
             j += 1
@@ -44,12 +44,14 @@ function reduceMatix(M)
             j += 1
         end
     end
+
+    return M
 end
 
 function pivotsMarker(M)
     m, n = size(M)
 
-    pivots = zeros(n, 1)
+    pivots = zeros(n)
     i = j = 1
     while (i <= m) && (j <= n)
         if pivotIndex(M, i, j) != -1
@@ -142,6 +144,15 @@ function findNullspace(M)
     return N
 end
 
+function testAll(U, C, N)
+    return @testset "tests" begin
+               @test [1 2 3 0 -3 -3] == U
+               @test [1 2 0 -3] == C
+               @test [-1 -1 1] == N
+           end;
+end
+
+
 cd("/home/leonardo/githubProjects/linear-systems-analyzer")
 A = readdlm("matrix_A.txt", ' ', Float64)
 U = reduceMatrix(A)
@@ -151,3 +162,6 @@ N = findNullspace(A)
 writedlm("matrix_U.txt", U, " ")
 writedlm("matrix_C.txt", C, " ")
 writedlm("matrix_N.txt", N, " ")
+#io =  open("resultado.txt", "w+")
+#testAll(U, C, N)
+#close(io)
