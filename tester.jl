@@ -28,11 +28,13 @@ function testAll()
     test(A, [1 2; 2 1; -5 2], [-1; -1; 1], [1 2; 2 1; 3 3], [-3; 4; 1])
 end
 
-A = [1 2 3; 2 1 3; -5 2 -3]
+#A = [1 2 3; 2 1 3; -5 2 -3]
 
-N = findNullspace(A)
-NT = findNullspaceT(A)
-writedlm("matrix_N.txt", N, " ")
-writedlm("matrix_NT.txt", NT, " ")
+
+
+#N = findNullspace(A)
+#NT = findNullspaceT(A)
+#writedlm("matrix_N.txt", N, " ")
+#writedlm("matrix_NT.txt", NT, " ")
 
 testAll()
