@@ -1,7 +1,7 @@
 using DelimitedFiles, Test, LinearAlgebra
 
 function exchangeRows(M, i1, i2)
-    M2 = copy
+    M2 = copy(M)
     aux = M2[i1, :]
     M2[i1, :] = M2[i2, :]
     M2[i2, :] = aux
