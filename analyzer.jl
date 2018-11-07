@@ -153,5 +153,5 @@ function printSubSpaces(C, N, CT, NT)
     println("-----------------------------------------------------------------")
 end
 
-C, N, CT, NT = findSubSpaces([1 3 4; 2 2 4; 3 1 4])
+C, N, CT, NT = findSubSpaces([1 2; 2 1; 3 3])
 printSubSpaces(C, N, CT, NT)
