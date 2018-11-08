@@ -1,21 +1,9 @@
 using DelimitedFiles, Test, LinearAlgebra
 
 function exchangeRows(M, i1, i2)
-    M2 = copy(M)
-    aux = M2[i1, :]
-    M2[i1, :] = M2[i2, :]
-    M2[i2, :] = aux
-
-    return M2
-end
-
-function exchangeColumns(M, j1, j2)
-    M2 = copy(M)
-    aux = M2[:, j1]
-    M2[:, j1] = M2[:, j2]
-    M2[:, j2] = aux
-
-    return M2
+    aux = M[i1, :]
+    M[i1, :] = M[i2, :]
+    M[i2, :] = aux
 end
 
 function pivotIndex(M, i, j)
@@ -25,34 +13,29 @@ function pivotIndex(M, i, j)
         if M[cont, j] != 0
             return cont
         end
-        return -1
     end
+    return 0
 end
 
-function pivotIndexT(M, i, j)
-    m, n = size(M)
+function reduceMatrix(A)
+    m, n = size(A)
+    U = copy(A)
+    E = Matrix{Float64}(I, m, m)
+    pivots = zeros(Int8, n)
 
-    for cont = j:n
-        if M[i, cont] != 0
-            return cont
-        end
-        return -1
-    end
-end
-
-function reduceMatrix(M)
-    m, n = size(M)
-
-    U = copy(M)
     i = j = 1
     while (i <= m) && (j <= n)
-        row = pivotIndex(M, i, j)
-        if row != -1
+        row = pivotIndex(U, i, j)
+        if row != 0
+            pivots[j] = 1
             if row != i
-                exchangeRows(M, row, i)
+                exchangeRows(U, row, i)
+                exchangeRows(E, row, i)
             end
             for cont = (i + 1):m
-                U[cont, :] -= (U[cont, j] / U[row, j]) * U[row, :]
+                mult = U[cont, j] / U[i, j]
+                U[cont, :] -= mult * U[i, :]
+                E[cont, :] -= mult * E[i, :]
             end
             i += 1
             j += 1
@@ -60,121 +43,40 @@ function reduceMatrix(M)
             j += 1
         end
     end
-
-    return U
-end
-
-function reduceMatrixT(M)
-    m, n = size(M)
-
-    U = copy(M)
-    i = j = 1
-    while (i <= m) && (j <= n)
-        column = pivotIndex(M, i, j)
-        if column != -1
-            if column != i
-                exchangeColumns(M, column, j)
-            end
-            for cont = (j + 1):n
-                U[:, cont] -= (U[i, cont] / U[i,column]) * U[:, column]
-            end
-            i += 1
-            j += 1
-        else
-            i += 1
-        end
-    end
-
-    return U
-end
-
-function pivotsMarker(M)
-    m, n = size(M)
-
-    pivots = zeros(n)
-    i = j = 1
-    while (i <= m) && (j <= n)
-        if pivotIndex(M, i, j) != -1
-            pivots[j] = 1
-            i += 1
-            j += 1
-            continue
-        end
-        j += 1
-    end
-
-    return pivots
-end
-
-function pivotsMarkerT(M)
-    m, n = size(M)
-
-    pivots = zeros(m)
-    i = j = 1
-    while (i <= m) && (j <= n)
-        if pivotIndexT(M, i, j) != -1
-            pivots[i] = 1
-            i += 1
-            j += 1
-            continue
-        end
-        i += 1
-    end
-
-    return pivots
-end
-
-function findRank(M)
-    M = reduceMatrix(M)
-    pivots = pivotsMarker(M)
-    dimens = size(pivots)
 
     rank = 0
-    for i = 1:dimens[1]
+    for i = 1:n
         if pivots[i] == 1
             rank += 1
         end
     end
 
-    return rank
+    return U, E, pivots, rank
 end
 
-function findColumnSpace(M)
-    pivots = pivotsMarker(M)
-    rank = findRank(M)
-    m, n = size(M)
+function findColumnSpace(A, pivots, rank)
+    m, n = size(A)
 
     if rank == 0
-        return zeros(Float64, m)
+        return zeros(Float64, m, 1)
     end
 
     C = zeros(Float64, m, rank)
+    cont = 1
     for i = 1:n
         if pivots[i] == 1
-            C[:, i] = M[:, i]
+            C[:, cont] = A[:, i]
+            cont += 1
         end
     end
 
     return C
 end
 
-function findColumnSpaceT(M)
-    pivots = pivotsMarkerT(M)
-    rank = findRank(M)
-    m, n = size(M)
+function findColumnSpaceT(A, C)
+    CT = A' * C
 
-    if rank == 0
-        return zeros(Float64, n)
-    end
-
-    C = zeros(Float64, n, rank)
-    for i = 1:m
-        if pivots[i] == 1
-            C[:, i] = M[i, :]
-        end
-    end
-
-    return C
+    return CT
 end
 
 function product(v1, v2, index)
@@ -190,29 +92,26 @@ function product(v1, v2, index)
     return sum
 end
 
-function findNullspace(M)
-    U = reduceMatrix(M)
+function findNullspace(U, pivots, rank)
     m, n = size(U)
-    rank = findRank(U)
-    pivots = pivotsMarker(U)
-    N = zeros(n, n - rank)
+    N = zeros(Float64, n, n - rank)
 
     if rank == n
-        return zeros(Float64, n)
+        return zeros(Float64, n, 1)
     end
 
     column = 1
 
     for i = 1:n
         if pivots[i] == 0
-            x = zeros(Float64, n, 1)
+            x = zeros(Float64, n)
             x[i] = 1
 
             cont = 0
             j = n
             while j >= 1
                 if pivots[j] == 1
-                    x[j] = (-1 * product(U[rank - cont, :], x, j)) / U[rank - cont, j]
+                    x[j] = (-product(U[rank - cont, :], x, j)) / U[rank - cont, j]
                     cont += 1
                 end
 
@@ -226,38 +125,27 @@ function findNullspace(M)
     return N
 end
 
-function findNullspaceT(M)
-    U = reduceMatrixT(M)
-    m, n = size(U)
-    rank = findRank(U)
-    pivots = pivotsMarkerT(U)
-    N = zeros(m, m - rank)
+function findNullSpaceT(A, E, rank)
+    m, n = size(A)
 
     if rank == m
-        return zeros(Float64, m)
+        return zeros(Float64, m, 1)
     end
 
-    row = 1
-
-    for i = 1:m
-        if pivots[i] == 0
-            x = zeros(Float64, m, 1)
-            x[i] = 1
-
-            cont = 0
-            j = m
-            while j >= 1
-                if pivots[j] == 1
-                    x[j] = (-1 * product(U[:, rank - cont], x, j)) / U[j, rank - cont]
-                    cont += 1
-                end
-
-                j -= 1
-            end
-            N[:, row] = x
-            row += 1
-        end
+    NT = zeros(Float64, m, (m - rank))
+    for cont = 1:(m - rank)
+        NT[:, cont] = E[rank + cont, :]
     end
 
-    return N
+    return NT
+end
+
+function findSubSpaces(A)
+    U, E, pivots, rank = reduceMatrix(A)
+    C = findColumnSpace(A, pivots, rank)
+    N = findNullspace(U, pivots, rank)
+    CT = findColumnSpaceT(A, C)
+    NT = findNullSpaceT(A, E, rank)
+
+    return C, N, CT, NT
 end
