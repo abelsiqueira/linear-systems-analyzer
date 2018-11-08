@@ -77,7 +77,6 @@ function findColumnSpaceT(A, C)
     CT = A' * C
 
     return CT
-
 end
 
 function product(v1, v2, index)
