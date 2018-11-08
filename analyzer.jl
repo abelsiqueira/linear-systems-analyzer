@@ -146,3 +146,12 @@ function findSubSpaces(A)
 
     return C, N, CT, NT
 end
+
+function printSubSpaces(C, N, CT, NT)
+    println("-----------------------------------------------------------------")
+    println("C(A) = ", C, "\nN(A) = ", N, "\nC(A^T) = ", CT, "\nN(A^T) = ", NT)
+    println("-----------------------------------------------------------------")
+end
+
+C, N, CT, NT = findSubSpaces([1 2; 2 1; 3 3])
+printSubSpaces(C, N, CT, NT)
