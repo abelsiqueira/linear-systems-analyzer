@@ -33,9 +33,9 @@ function reduceMatrix(A)
                 exchangeRows(E, row, i)
             end
             for cont = (i + 1):m
-                mult = U[cont, j] / U[row, j]
-                U[cont, :] -= mult * U[row, :]
-                E[cont, :] -= mult * E[row, :]
+                mult = U[cont, j] / U[i, j]
+                U[cont, :] -= mult * U[i, :]
+                E[cont, :] -= mult * E[i, :]
             end
             i += 1
             j += 1
