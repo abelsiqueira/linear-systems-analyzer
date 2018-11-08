@@ -44,12 +44,7 @@ function reduceMatrix(A)
         end
     end
 
-    rank = 0
-    for i = 1:n
-        if pivots[i] == 1
-            rank += 1
-        end
-    end
+    rank = sum(pivots)
 
     return U, E, pivots, rank
 end
@@ -57,10 +52,13 @@ end
 function findColumnSpace(A, pivots, rank)
     m, n = size(A)
 
+    # Remove
     if rank == 0
         return zeros(Float64, m, 1)
     end
 
+    # idxs = findall(pivots .== 1)
+    # C = A[:, idxs]
     C = zeros(Float64, m, rank)
     cont = 1
     for i = 1:n
