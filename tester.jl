@@ -17,7 +17,7 @@ function test(A, PC, PN, PCT, PNT)
 
     C, N, CT, NT = findSubSpaces(A)
 
-    @testset "Matrix match" begin
+    @testset "Matrices matching" begin
         @test isapprox(norm(PC, 1), norm(C, 1), atol=ℯ^(-12))
         @test isapprox(norm(PN, 1), norm(N, 1), atol=ℯ^(-12))
         @test isapprox(norm(PCT, 1), norm(CT, 1), atol=ℯ^(-12))
