@@ -58,7 +58,7 @@ function findColumnSpace(A, pivots, rank)
     m, n = size(A)
 
     if rank == 0
-        return zeros(Float64, m)
+        return zeros(Float64, m, 1)
     end
 
     C = zeros(Float64, m, rank)
@@ -98,7 +98,7 @@ function findNullspace(U, pivots, rank)
     N = zeros(Float64, n, n - rank)
 
     if rank == n
-        return zeros(Float64, n)
+        return zeros(Float64, n, 1)
     end
 
     column = 1
@@ -128,8 +128,12 @@ end
 
 function findNullSpaceT(A, E, rank)
     m, n = size(A)
-    NT = zeros(Float64, n, (m - rank))
 
+    if rank == m
+        return zeros(Float64, m, 1)
+    end
+
+    NT = zeros(Float64, m, (m - rank))
     for cont = 1:(m - rank)
         NT[:, cont] = E[rank + cont, :]
     end
@@ -142,16 +146,7 @@ function findSubSpaces(A)
     C = findColumnSpace(A, pivots, rank)
     N = findNullspace(U, pivots, rank)
     CT = findColumnSpaceT(A, C)
-    NT = findNullspace(A, E, rank)
+    NT = findNullSpaceT(A, E, rank)
 
     return C, N, CT, NT
 end
-
-function printSubSpaces(C, N, CT, NT)
-    println("-----------------------------------------------------------------")
-    println("C(A) = ", C, "\nN(A) = ", N, "\nC(A^T) = ", CT, "\nN(A^T) = ", NT)
-    println("-----------------------------------------------------------------")
-end
-
-C, N, CT, NT = findSubSpaces([1 2; 2 1; 3 3])
-printSubSpaces(C, N, CT, NT)
